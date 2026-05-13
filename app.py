@@ -2,18 +2,36 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# ==================================
+# PAGE CONFIG
+# ==================================
+
 st.set_page_config(
     page_title="Forecast Dashboard",
     layout="wide"
 )
 
+# ==================================
+# LOAD DATA
+# ==================================
+
 @st.cache_data
 def load_data():
-    return pd.read_parquet(
+    df = pd.read_parquet(
         "audited_revenue_granular.parquet"
     )
 
+    df["dt_date_sale"] = pd.to_datetime(
+        df["dt_date_sale"]
+    )
+
+    return df
+
 df = load_data()
+
+# ==================================
+# SIDEBAR
+# ==================================
 
 st.sidebar.title("Filtros")
 
@@ -35,42 +53,60 @@ country = st.sidebar.multiselect(
     default=sorted(df["country"].dropna().unique())
 )
 
+# ==================================
+# FILTER DATA
+# ==================================
+
 filtered = df[
     (df["txt_tipo_resultado"].isin(tipo_resultado)) &
     (df["txt_channel"].isin(channel)) &
     (df["country"].isin(country))
 ]
 
+# ==================================
+# TITLE + KPI
+# ==================================
+
+st.title("Forecast Revenue Dashboard")
+
+total_revenue = filtered["revenue_usd"].sum()
+
+st.metric(
+    "Revenue USD",
+    f"${total_revenue:,.0f}"
+)
+
+# ==================================
+# TIMESERIES
+# ==================================
+
+timeseries = (
+    filtered
+    .groupby(
+        ["dt_date_sale", "txt_channel"],
+        as_index=False
     )["revenue_usd"]
     .sum()
+)
+
+fig = px.line(
+    timeseries,
+    x="dt_date_sale",
+    y="revenue_usd",
     color="txt_channel",
     title="Revenue Timeline"
 )
+
+st.plotly_chart(
+    fig,
     use_container_width=True
 )
+
+# ==================================
+# DETAIL TABLE
+# ==================================
 
 st.dataframe(
     filtered,
     use_container_width=True
 )
-st.plotly_chart(
-    fig,
-    timeseries,
-    x="dt_date_sale",
-    y="revenue_usd",
-)
-
-fig = px.line(
-st.title("Forecast Revenue Dashboard")
-
-st.metric(
-    "Revenue USD",
-    f"${filtered['revenue_usd'].sum():,.0f}"
-        as_index=False
-)
-
-        ["dt_date_sale", "txt_channel"],
-timeseries = (
-    filtered
-    .groupby(
-
