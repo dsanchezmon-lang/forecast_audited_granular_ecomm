@@ -2,21 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ==================================
-# PAGE CONFIG
-# ==================================
-
 st.set_page_config(
     page_title="Forecast Dashboard",
     layout="wide"
 )
 
-# ==================================
-# LOAD DATA
-# ==================================
-
 @st.cache_data
 def load_data():
+
     df = pd.read_parquet(
         "audited_revenue_granular.parquet"
     )
@@ -29,45 +22,75 @@ def load_data():
 
 df = load_data()
 
-# ==================================
+# =====================================
 # SIDEBAR
-# ==================================
+# =====================================
 
 st.sidebar.title("Filtros")
 
 tipo_resultado = st.sidebar.multiselect(
     "Tipo Resultado",
-    sorted(df["txt_tipo_resultado"].dropna().unique()),
-    default=sorted(df["txt_tipo_resultado"].dropna().unique())
+    options=sorted(
+        df["txt_tipo_resultado"]
+        .dropna()
+        .unique()
+    ),
+    default=sorted(
+        df["txt_tipo_resultado"]
+        .dropna()
+        .unique()
+    )
 )
 
 channel = st.sidebar.multiselect(
     "Channel",
-    sorted(df["txt_channel"].dropna().unique()),
-    default=sorted(df["txt_channel"].dropna().unique())
+    options=sorted(
+        df["txt_channel"]
+        .dropna()
+        .unique()
+    ),
+    default=sorted(
+        df["txt_channel"]
+        .dropna()
+        .unique()
+    )
 )
 
 country = st.sidebar.multiselect(
     "Country",
-    sorted(df["country"].dropna().unique()),
-    default=sorted(df["country"].dropna().unique())
+    options=sorted(
+        df["country"]
+        .dropna()
+        .unique()
+    ),
+    default=sorted(
+        df["country"]
+        .dropna()
+        .unique()
+    )
 )
 
-# ==================================
+# =====================================
 # FILTER DATA
-# ==================================
+# =====================================
 
 filtered = df[
-    (df["txt_tipo_resultado"].isin(tipo_resultado)) &
-    (df["txt_channel"].isin(channel)) &
+    (df["txt_tipo_resultado"].isin(tipo_resultado))
+    &
+    (df["txt_channel"].isin(channel))
+    &
     (df["country"].isin(country))
 ]
 
-# ==================================
-# TITLE + KPI
-# ==================================
+# =====================================
+# TITLE
+# =====================================
 
 st.title("Forecast Revenue Dashboard")
+
+# =====================================
+# KPI
+# =====================================
 
 total_revenue = filtered["revenue_usd"].sum()
 
@@ -76,16 +99,17 @@ st.metric(
     f"${total_revenue:,.0f}"
 )
 
-# ==================================
+# =====================================
 # TIMESERIES
-# ==================================
+# =====================================
 
 timeseries = (
     filtered
     .groupby(
         ["dt_date_sale", "txt_channel"],
         as_index=False
-    )["revenue_usd"]
+    )
+    ["revenue_usd"]
     .sum()
 )
 
@@ -102,9 +126,9 @@ st.plotly_chart(
     use_container_width=True
 )
 
-# ==================================
+# =====================================
 # DETAIL TABLE
-# ==================================
+# =====================================
 
 st.dataframe(
     filtered,
