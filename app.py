@@ -22,57 +22,25 @@ def load_data():
 
 df = load_data()
 
-# =====================================
-# SIDEBAR
-# =====================================
-
 st.sidebar.title("Filtros")
 
 tipo_resultado = st.sidebar.multiselect(
     "Tipo Resultado",
-    options=sorted(
-        df["txt_tipo_resultado"]
-        .dropna()
-        .unique()
-    ),
-    default=sorted(
-        df["txt_tipo_resultado"]
-        .dropna()
-        .unique()
-    )
+    sorted(df["txt_tipo_resultado"].dropna().unique()),
+    default=sorted(df["txt_tipo_resultado"].dropna().unique())
 )
 
 channel = st.sidebar.multiselect(
     "Channel",
-    options=sorted(
-        df["txt_channel"]
-        .dropna()
-        .unique()
-    ),
-    default=sorted(
-        df["txt_channel"]
-        .dropna()
-        .unique()
-    )
+    sorted(df["txt_channel"].dropna().unique()),
+    default=sorted(df["txt_channel"].dropna().unique())
 )
 
 country = st.sidebar.multiselect(
     "Country",
-    options=sorted(
-        df["country"]
-        .dropna()
-        .unique()
-    ),
-    default=sorted(
-        df["country"]
-        .dropna()
-        .unique()
-    )
+    sorted(df["country"].dropna().unique()),
+    default=sorted(df["country"].dropna().unique())
 )
-
-# =====================================
-# FILTER DATA
-# =====================================
 
 filtered = df[
     (df["txt_tipo_resultado"].isin(tipo_resultado))
@@ -82,15 +50,7 @@ filtered = df[
     (df["country"].isin(country))
 ]
 
-# =====================================
-# TITLE
-# =====================================
-
 st.title("Forecast Revenue Dashboard")
-
-# =====================================
-# KPI
-# =====================================
 
 total_revenue = filtered["revenue_usd"].sum()
 
@@ -99,17 +59,12 @@ st.metric(
     f"${total_revenue:,.0f}"
 )
 
-# =====================================
-# TIMESERIES
-# =====================================
-
 timeseries = (
     filtered
     .groupby(
         ["dt_date_sale", "txt_channel"],
         as_index=False
-    )
-    ["revenue_usd"]
+    )["revenue_usd"]
     .sum()
 )
 
@@ -125,10 +80,6 @@ st.plotly_chart(
     fig,
     use_container_width=True
 )
-
-# =====================================
-# DETAIL TABLE
-# =====================================
 
 st.dataframe(
     filtered,
