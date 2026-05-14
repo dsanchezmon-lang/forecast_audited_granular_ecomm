@@ -7,11 +7,24 @@ st.set_page_config(
     layout="wide"
 )
 
+# =====================================
+# LOAD DATA
+# =====================================
+
 @st.cache_data
 def load_data():
 
+    cols = [
+        "dt_date_sale",
+        "txt_channel",
+        "txt_tipo_resultado",
+        "country",
+        "revenue_usd"
+    ]
+
     df = pd.read_parquet(
-        "audited_revenue_granular.parquet"
+        "audited_revenue_granular.parquet",
+        columns=cols
     )
 
     df["dt_date_sale"] = pd.to_datetime(
@@ -21,6 +34,10 @@ def load_data():
     return df
 
 df = load_data()
+
+# =====================================
+# SIDEBAR
+# =====================================
 
 st.sidebar.title("Filtros")
 
@@ -38,26 +55,39 @@ channel = st.sidebar.multiselect(
 
 country = st.sidebar.multiselect(
     "Country",
-    sorted(df["country"].dropna().unique()),
-    default=sorted(df["country"].dropna().unique())
+    sorted(df["country"].dropna().unique())[:50]
 )
+
+# =====================================
+# FILTER
+# =====================================
 
 filtered = df[
     (df["txt_tipo_resultado"].isin(tipo_resultado))
     &
     (df["txt_channel"].isin(channel))
-    &
-    (df["country"].isin(country))
 ]
+
+if len(country) > 0:
+
+    filtered = filtered[
+        filtered["country"].isin(country)
+    ]
+
+# =====================================
+# KPI
+# =====================================
 
 st.title("Forecast Revenue Dashboard")
 
-total_revenue = filtered["revenue_usd"].sum()
-
 st.metric(
     "Revenue USD",
-    f"${total_revenue:,.0f}"
+    f"${filtered['revenue_usd'].sum():,.0f}"
 )
+
+# =====================================
+# GRAPH
+# =====================================
 
 timeseries = (
     filtered
@@ -72,8 +102,7 @@ fig = px.line(
     timeseries,
     x="dt_date_sale",
     y="revenue_usd",
-    color="txt_channel",
-    title="Revenue Timeline"
+    color="txt_channel"
 )
 
 st.plotly_chart(
@@ -81,7 +110,11 @@ st.plotly_chart(
     use_container_width=True
 )
 
+# =====================================
+# SAMPLE TABLE
+# =====================================
+
 st.dataframe(
-    filtered,
+    filtered.head(1000),
     use_container_width=True
 )
